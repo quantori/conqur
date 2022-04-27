@@ -1,41 +1,36 @@
-class ConQur:
+import sklearn
+import numpy as nm
+
+class ConQur(sklearn.base.TransformerMixin):
     """
-Parameters
+    Parameters
     ----------
     tax_tab : The taxa read count table, samples (row) by taxa (col).
 
-    batchid : The batch indicator, must be a factor.
-
-    covariates :  The data.frame contains the key variable of interest and other covariates, e.g.,
-    data.frame(key, x1, x2).
+    batchid : The batch indicator.
 
     batch_ref : A character, the name of the reference batch, e.g.,“2”.
+
+    covariates :  The data.frame contains the key variable of interest and other covariates, e.g.,
+    data.frame(key, x1, x2). None, if you want to drop the key variables and covariates, and then use the batch ID
+    exclusively in regressions of both parts; default is None.
 
     logistic_lasso :  A logical value, TRUE for L1-penalized logistic regression, FALSE for standard
     logistic regression; default is FALSE.
 
-    quantile_type :  A character, “standard” for standard quantile regression, “lasso” for L1-penalized
-    quantile regression, “composite” for composite quantile regression; default is
-    “standard”.
+    l1_coefficient : A value for L1-penalized quantile regression; default is 0.
 
-    simple_match : A logical value, TRUE for using the simple quantile-quantile matching, FALSE
-    for not; default is FALSE.
+    number_of_composites : The number of composites in composite quantile regression; default is 1.
 
-    lambda_quantile : A character, the penalization parameter in quantile regression if quantile_type=“lasso”
-    or “composite”; only two choices “2p/n” or “2p/logn”, where p is the number
-    of expanded covariates and n is the number of non-zero read count; default is
-    “2p/n”.
+    lambda_quantile : A real number, the penalization parameter in quantile regression if used lasso or composite
+    quantile regression; default is 1.
 
-    interplt :  A logical value, TRUE for using the data-driven linear interpolation between
-    zero and non-zero quantiles to stablize border estimates, FALSE for not; default
-    is FALSE.
-
-    delta A real constant in (0, 0.5), determing the size of the interpolation window if
-    interplt=TRUE, a larger delta leads to a narrower interpolation window; default
-    is 0.4999.
+    interplt_delta :  A real constant in (0, 0.5), determing the size of the interpolation window
+    for using the data-driven linear interpolation between zero and non-zero quantiles to stablize border estimates.
+    None, if you don't use data-driven linear interpolation; default is None.
 
     taus : A sequence of quantile levels, determing the “precision” of estimating conditional quantile functions;
-    default is [i for i in range(5, 1000, 5) / 1000].
+    default is nm.arange(0.005, 1, 0.005).
 
     ----------
 
@@ -46,15 +41,14 @@ Parameters
     def __init__(self,
                 tax_tab,
                 batchid,
-                covariates,
                 batch_ref,
+                covariates = None,
                 logistic_lasso = False,
-                quantile_type = "standard",
-                simple_match = False,
-                lambda_quantile = "2p/n",
-                interplt = False,
-                delta = 0.4999,
-                taus = [i for i in range(5, 1000, 5) / 1000]
+                l1_coefficient = 0,
+                number_of_composites = 1,
+                lambda_quantile = 1,
+                interplt_delta = None,
+                taus = nm.arange(0.005, 1, 0.005)
                 ):
         pass
     def fit(self, X, y):
