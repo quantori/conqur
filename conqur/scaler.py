@@ -85,7 +85,29 @@ class ConQur(sklearn.base.TransformerMixin):
                  quantiles=None,
                  interplt_delta=None
                  ):
-        pass
+        self.batch_columns = batch_columns
+        self.covariates_columns = covariates_columns
+        self.penalty = penalty
+        self.dual = dual
+        self.tol = tol
+        self.C = C
+        self.fit_intercept_logit = fit_intercept_logit
+        self.intercept_scaling = intercept_scaling
+        self.class_weight = class_weight
+        self.random_state = random_state
+        self.solver_logit = solver_logit
+        self.max_iter = max_iter
+        self.multi_class = multi_class
+        self.verbose = verbose
+        self.warm_start = warm_start
+        self.n_jobs = n_jobs
+        self.l1_ratio = l1_ratio
+        self.alpha = alpha
+        self.fit_intercept_quantile = fit_intercept_quantile
+        self.solver_quantile = solver_quantile
+        self.solver_options = solver_options
+        self.quantiles = quantiles
+        self.interplt_delta = interplt_delta
 
     def fit(self, X):
         """
