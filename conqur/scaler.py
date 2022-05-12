@@ -108,7 +108,10 @@ class ConQur(skl.base.TransformerMixin):
         self.fit_intercept_quantile = fit_intercept_quantile
         self.solver_quantile = solver_quantile
         self.solver_options = solver_options
-        self.quantiles = quantiles
+        if quantiles == None:
+            self.quantiles = np.linspace(0.005, 1, 199)
+        else:
+            self.quantiles = quantiles
         self.interplt_delta = interplt_delta
 
     def fit(self, X):
@@ -126,7 +129,7 @@ class ConQur(skl.base.TransformerMixin):
 
 
         """
-        batch_and_covariates_indexes = self.batch_columns + self.covariates_columns
+        batch_and_covariates_indexes = np.hstack((self.batch_columns, self.covariates_columns))
         X_batch_and_covariates = X[:, batch_and_covariates_indexes]
         columns_indexes = np.arange(0, len(X[0]))
         feature_indexes = np.zeros(len(X[0]) - len(batch_and_covariates_indexes), dtype=np.int16)
@@ -160,27 +163,19 @@ class ConQur(skl.base.TransformerMixin):
             self.dict_logit_with_batch[feature] = logistic_regression.fit(X_batch_and_covariates, y_for_logit)
             y_nonzero = y_initial[y_initial != 0]
             y_nonzero_shifted = y_nonzero + np.random.uniform(0, 1, len(y_nonzero))
+            X_and_y = np.vstack((X_batch_and_covariates, y_initial))
+            X_and_y_nonzero = X_and_y[X_and_y[:, len(X_and_y[0]) - 1] != 0]
+            X_batch_and_covariates_nonzero = X_and_y_nonzero[:, np.arange(0, len(X_and_y_nonzero[0]) - 1)]
             self.dict_quantile_with_batch[feature] = []
-            if self.quantiles == None:
-                for i in np.linspace(0.005, 1, 199):
-                    quantile_regression = skl.linear_model.QuantileRegressor(quantile=i,
-                                                                             alpha=self.alpha,
-                                                                             fit_intercept=self.fit_intercept_quantile,
-                                                                             solver=self.solver_quantile,
-                                                                             solver_options=self.solver_options
-                                                                             )
-                    self.dict_quantile_with_batch[feature].append(quantile_regression.fit(X_batch_and_covariates,
-                                                                                          y_nonzero_shifted))
-            else:
-                for i in self.quantiles:
-                    quantile_regression = skl.linear_model.QuantileRegressor(quantile=i,
-                                                                             alpha=self.alpha,
-                                                                             fit_intercept=self.fit_intercept_quantile,
-                                                                             solver=self.solver_quantile,
-                                                                             solver_options=self.solver_options
-                                                                             )
-                    self.dict_quantile_with_batch[feature].append(quantile_regression.fit(X_batch_and_covariates,
-                                                                                          y_nonzero_shifted))
+            for i in self.quantiles:
+                quantile_regression = skl.linear_model.QuantileRegressor(quantile=i,
+                                                                         alpha=self.alpha,
+                                                                         fit_intercept=self.fit_intercept_quantile,
+                                                                         solver=self.solver_quantile,
+                                                                         solver_options=self.solver_options
+                                                                         )
+                self.dict_quantile_with_batch[feature].append(quantile_regression.fit(X_batch_and_covariates_nonzero,
+                                                                                      y_nonzero_shifted))
 
     def transform(self, X):
         """
