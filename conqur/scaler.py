@@ -1,8 +1,9 @@
-import sklearn
-import numpy
+import sklearn as skl
+import numpy as np
+import pandas as pd
 
 
-class ConQur(sklearn.base.TransformerMixin):
+class ConQur(skl.base.TransformerMixin):
     """
     Parameters
     ----------
@@ -51,7 +52,7 @@ class ConQur(sklearn.base.TransformerMixin):
     solver_options : See sklearn.linear_model.QuantileRegressor; solver_options parameter.
 
     quantiles : A sequence of quantile levels, determing the “precision” of estimating conditional quantile functions;
-    the default value is equal to None, but the code will be executed on the list numpy.linspace(0.005, 1, 199).
+    the default value is equal to None, but the code will be executed on the list np.linspace(0.005, 1, 199).
 
     interplt_delta :  A float constant in (0, 0.5), determing the size of the interpolation window
     for using the data-driven linear interpolation between zero and non-zero quantiles to stabilize border estimates.
@@ -59,6 +60,7 @@ class ConQur(sklearn.base.TransformerMixin):
 
 
     """
+
     def __init__(self,
                  batch_columns,
                  covariates_columns,
@@ -124,7 +126,61 @@ class ConQur(sklearn.base.TransformerMixin):
 
 
         """
-        pass
+        batch_and_covariates_indexes = self.batch_columns + self.covariates_columns
+        X_batch_and_covariates = X[:, batch_and_covariates_indexes]
+        columns_indexes = np.arange(0, len(X[0]))
+        feature_indexes = np.zeros(len(X[0]) - len(batch_and_covariates_indexes), dtype=np.int16)
+        counter = 0
+        for i in columns_indexes:
+            if not (i in batch_and_covariates_indexes):
+                feature_indexes[counter] = columns_indexes[i]
+                counter += 1
+        self.dict_logit_with_batch = dict()
+        self.dict_quantile_with_batch = dict()
+        for feature in feature_indexes:
+            y_initial = X[:, feature]
+            y_for_logit = y_initial.copy()
+            y_for_logit[y_for_logit != 0] = 1
+            logistic_regression = skl.linear_model.LogisticRegression(self.penalty,
+                                                                      dual=self.dual,
+                                                                      tol=self.tol,
+                                                                      C=self.C,
+                                                                      fit_intercept=self.fit_intercept_logit,
+                                                                      intercept_scaling=self.intercept_scaling,
+                                                                      class_weight=self.class_weight,
+                                                                      random_state=self.random_state,
+                                                                      solver=self.solver_logit,
+                                                                      max_iter=self.max_iter,
+                                                                      multi_class=self.multi_class,
+                                                                      verbose=self.verbose,
+                                                                      warm_start=self.warm_start,
+                                                                      n_jobs=self.n_jobs,
+                                                                      l1_ratio=self.l1_ratio
+                                                                      )
+            self.dict_logit_with_batch[feature] = logistic_regression.fit(X_batch_and_covariates, y_for_logit)
+            y_nonzero = y_initial[y_initial != 0]
+            y_nonzero_shifted = y_nonzero + np.random.uniform(0, 1, len(y_nonzero))
+            self.dict_quantile_with_batch[feature] = []
+            if self.quantiles == None:
+                for i in np.linspace(0.005, 1, 199):
+                    quantile_regression = skl.linear_model.QuantileRegressor(quantile=i,
+                                                                             alpha=self.alpha,
+                                                                             fit_intercept=self.fit_intercept_quantile,
+                                                                             solver=self.solver_quantile,
+                                                                             solver_options=self.solver_options
+                                                                             )
+                    self.dict_quantile_with_batch[feature].append(quantile_regression.fit(X_batch_and_covariates,
+                                                                                          y_nonzero_shifted))
+            else:
+                for i in self.quantiles:
+                    quantile_regression = skl.linear_model.QuantileRegressor(quantile=i,
+                                                                             alpha=self.alpha,
+                                                                             fit_intercept=self.fit_intercept_quantile,
+                                                                             solver=self.solver_quantile,
+                                                                             solver_options=self.solver_options
+                                                                             )
+                    self.dict_quantile_with_batch[feature].append(quantile_regression.fit(X_batch_and_covariates,
+                                                                                          y_nonzero_shifted))
 
     def transform(self, X):
         """
