@@ -108,7 +108,7 @@ class ConQur(skl.base.TransformerMixin):
         self.fit_intercept_quantile = fit_intercept_quantile
         self.solver_quantile = solver_quantile
         self.solver_options = solver_options
-        if quantiles == None:
+        if quantiles is None:
             self.quantiles = np.linspace(0.005, 1, 199)
         else:
             self.quantiles = quantiles
@@ -191,4 +191,78 @@ class ConQur(skl.base.TransformerMixin):
 
 
         """
-        pass
+        Xt = X.copy()
+        batch_and_covariates_indexes = np.hstack((self.batch_columns, self.covariates_columns))
+        X_batch_and_covariates = X[:, batch_and_covariates_indexes]
+        columns_indexes = np.arange(0, len(X[0]))
+        feature_indexes = np.zeros(len(X[0]) - len(batch_and_covariates_indexes), dtype=np.int16)
+        counter = 0
+        for i in columns_indexes:
+            if not (i in batch_and_covariates_indexes):
+                feature_indexes[counter] = columns_indexes[i]
+                counter += 1
+        for feature in feature_indexes:
+            y_initial = X[:, feature]
+            Y_predicted = self.dict_logit_with_batch[feature].predict_proba(X_batch_and_covariates)
+            y_zero_predicted = Y_predicted[:, 0]
+            logit_model_nobatch = skl.linear_model.LogisticRegression(self.penalty,
+                                                                      dual=self.dual,
+                                                                      tol=self.tol,
+                                                                      C=self.C,
+                                                                      fit_intercept=self.fit_intercept_logit,
+                                                                      intercept_scaling=self.intercept_scaling,
+                                                                      class_weight=self.class_weight,
+                                                                      random_state=self.random_state,
+                                                                      solver=self.solver_logit,
+                                                                      max_iter=self.max_iter,
+                                                                      multi_class=self.multi_class,
+                                                                      verbose=self.verbose,
+                                                                      warm_start=self.warm_start,
+                                                                      n_jobs=self.n_jobs,
+                                                                      l1_ratio=self.l1_ratio
+                                                                      )
+            logit_model_nobatch.coef_ = self.dict_logit_with_batch[feature].coef_.copy()
+            logit_model_nobatch.coef_[0, self.batch_columns] = 0
+            Y_predicted_nobatch = logit_model_nobatch.predict_proba(X_batch_and_covariates)
+            y_zero_predicted_nobatch = Y_predicted_nobatch[:, 0]
+            predictions = dict()
+            predictions_nobatch = dict()
+            counter_quantile = 0
+            for quantile in self.quantiles:
+                predictions[quantile] = self.dict_quantile_with_batch[feature][counter_quantile].predict(X_batch_and_covariates)
+                predictions[quantile] = np.floor(predictions[quantile])
+                quantile_model_nobatch = skl.linear_model.QuantileRegressor(quantile=quantile,
+                                                                            alpha=self.alpha,
+                                                                            fit_intercept=self.fit_intercept_quantile,
+                                                                            solver=self.solver_quantile,
+                                                                            solver_options=self.solver_options
+                                                                            )
+                quantile_model_nobatch.coef_ = self.dict_quantile_with_batch[feature][counter_quantile].coef_.copy()
+                quantile_model_nobatch.coef_[self.batch_columns] = 0
+                predictions_nobatch[quantile] = quantile_model_nobatch.predict(X_batch_and_covariates)
+                predictions_nobatch[quantile] = np.floor(predictions_nobatch[quantile])
+                counter_quantile += 1
+            for sample in range(len(y_initial)):
+                predictions_correct = dict()
+                predictions_correct_nobatch = dict()
+                quantile_correct_list = []
+                quantile_correct_nobatch_list = []
+                for quantile in self.quantiles:
+                    quantile_correct = 1 - (1 - quantile) * (1 - y_zero_predicted[sample])
+                    quantile_correct_list.append(quantile_correct)
+                    predictions_correct[quantile_correct] = predictions[quantile][sample]
+                    quantile_correct_nobatch = 1 - (1 - quantile) * (1 - y_zero_predicted_nobatch[sample])
+                    quantile_correct_nobatch_list.append(quantile_correct_nobatch)
+                    predictions_correct_nobatch[quantile_correct_nobatch] = predictions_nobatch[quantile][sample]
+                y_initial_sample = y_initial[sample]
+                y_initial_sample_quantile = y_zero_predicted[sample]
+                for quantile in quantile_correct_list:
+                    if predictions_correct[quantile] <= y_initial_sample:
+                        y_initial_sample_quantile = quantile
+                y_nobatch = 0
+                for quantile in quantile_correct_nobatch_list:
+                    if quantile <= y_initial_sample_quantile:
+                        y_nobatch = predictions_correct_nobatch[quantile]
+                Xt[sample, feature] = y_nobatch
+        return Xt
+
