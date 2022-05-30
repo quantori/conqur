@@ -16,8 +16,8 @@ from conqur import cli
 #@pytest.fixture
 def r_initial_matrix():
     with open('C:/Users/a.grefenshteyn/Desktop/tests/initial_matrix_for_test.txt') as file:
-        X_batchid = np.array(pd.read_csv(file, sep=' '), dtype=np.int16)
-        X_with_batch_columns = np.zeros((273, 107), dtype=np.int16)
+        X_batchid = np.array(pd.read_csv(file, sep=' '))
+        X_with_batch_columns = np.zeros((273, 107))
         X_with_batch_columns[:, range(100)] = X_batchid[:, range(100)]
         X_with_batch_columns[:, range(103, 107)] = X_batchid[:, range(101, 105)]
         for j in range(273):
@@ -33,7 +33,7 @@ def r_initial_matrix():
 #@pytest.fixture
 def r_corrected_matrix_1():
     with open('C:/Users/a.grefenshteyn/Desktop/tests/matrix_corrected_for_test_1.txt') as file:
-        return np.array(pd.read_csv(file, sep=' '), dtype=np.int16)
+        return np.array(pd.read_csv(file, sep=' '))
 
 
 #@pytest.fixture
@@ -46,10 +46,13 @@ class TestConqur(unittest.TestCase):
     """Tests for `conqur` package."""
 
     def test_from_R_data_1(self):
-        ConQur_class = scaler.ConQur(np.array([100, 101, 102]), np.array([103, 104, 105, 106]), penalty='none',
-                                     alphas=np.zeros(100), reference_batch=100)
+        ConQur_class = scaler.ConQur(np.array([100, 101, 102]),
+                                     np.array([103, 104, 105, 106]),
+                                     {100: 1, 101: 0, 102: 0},
+                                     penalty='none',
+                                     alphas=np.zeros(100))
         Xt = ConQur_class.fit_transform(r_initial_matrix())
-        assert Xt == r_corrected_matrix_1()
+        assert np.array_equal(Xt[:, 0], r_corrected_matrix_1()[:, 0])
 
 #    def test_from_R_data_2(self):
 #        ConQur_class = scaler.ConQur(np.array([101]), np.array([102, 103, 104, 105]), penalty='l1',

@@ -12,12 +12,13 @@ class ConQur(sklearn.base.TransformerMixin):
     covariates for each feature. None, if you want to drop the key variables and covariates, and then
     use the batch columns exclusively in regressions of both parts.
 
-    jittering_columns : A list of columns whose elements are integers. Such columns are understood as a
-    discrete distribution, and they need to be shifted to a uniform distribution. Must not intersect with
-    covariates_columns and batch_columns. If None, then all columns of features are shifted; default is None.
+    reference_values : A dict of reference values of batches, the size of the dict must be equal to the number
+    of batch columns.
 
-    reference_batch : An integer constant indicating the control package. Must be a batch_columns element;
-    default is 0.
+    integer_columns : A list of columns whose elements are integers. Such columns are understood as a
+    discrete distribution, and they need to be shifted by uniform distribution to make the
+    underlying distribution continous. Must not intersect with covariates_columns and batch_columns. If None,
+    then all columns of features are shifted; default is None.
 
     penalty : See sklearn.linear_model.LogisticRegression; penalty parameter.
 
@@ -49,9 +50,10 @@ class ConQur(sklearn.base.TransformerMixin):
 
     l1_ratio : See sklearn.linear_model.LogisticRegression; l1_ratio parameter.
 
-    alphas : A list of L1-regularization constants, the size of the list must be equal to the number
-    of feature columns. The default value is equal to None, but the code will be executed on the list
-    np.array(1.0, ..., 1.0).
+    alphas : A list of L1-regularization constants or just float, the size of the list must be equal to the number
+    of feature columns. If a float is passed, then the regularization constants will be the same for
+    all features and equal to the passed float. The default value is equal to None, but the code will be executed
+    on the list np.array(1.0, ..., 1.0).
 
     fit_intercept_quantile : The same as fit_intercept parameter, see sklearn.linear_model.QuantileRegressor.
 
@@ -73,9 +75,9 @@ class ConQur(sklearn.base.TransformerMixin):
     def __init__(self,
                  batch_columns,
                  covariates_columns,
+                 reference_values,
                  *,
-                 jittering_columns=None,
-                 reference_batch=0,
+                 integer_columns=None,
                  penalty='l2',
                  dual=False,
                  tol=1e-4,
@@ -100,8 +102,8 @@ class ConQur(sklearn.base.TransformerMixin):
                  ):
         self.batch_columns = batch_columns
         self.covariates_columns = covariates_columns
-        self.jittering_columns = jittering_columns
-        self.reference_batch = reference_batch
+        self.reference_values = reference_values
+        self.integer_columns = integer_columns
         self.penalty = penalty
         self.dual = dual
         self.tol = tol
@@ -122,7 +124,7 @@ class ConQur(sklearn.base.TransformerMixin):
         self.solver_quantile = solver_quantile
         self.solver_options = solver_options
         if quantiles is None:
-            self.quantiles = np.linspace(0.05, 1, 19, endpoint=False)
+            self.quantiles = np.linspace(0.05, 1, 3, endpoint=False)
         else:
             self.quantiles = quantiles
         self.interplt_delta = interplt_delta
@@ -143,20 +145,20 @@ class ConQur(sklearn.base.TransformerMixin):
 
         """
         batch_and_covariates_indexes = np.hstack((self.batch_columns, self.covariates_columns))
-        batch_columns_no_ref_batch = list(set(self.batch_columns) - set(np.array([self.reference_batch])))
-        batch_columns_no_ref_batch = np.array(batch_columns_no_ref_batch)
-        batch_and_covariates_no_ref_batch_indexes = np.hstack((batch_columns_no_ref_batch, self.covariates_columns))
-        X_batch_and_covariates_no_ref_batch = X[:, batch_and_covariates_no_ref_batch_indexes]
+        X_batch_and_covariates = X[:, batch_and_covariates_indexes]
         columns_indexes_set = set(np.arange(0, len(X[0])))
         batch_and_covariates_indexes_set = set(batch_and_covariates_indexes)
         feature_indexes = list(columns_indexes_set - batch_and_covariates_indexes_set)
         feature_indexes = np.array(feature_indexes)
-        if self.jittering_columns is None:
-            jittering_columns_indexes = feature_indexes
+        feature_indexes.sort()
+        if self.integer_columns is None:
+            integer_columns_indexes = feature_indexes
         else:
-            jittering_columns_indexes = self.jittering_columns
+            integer_columns_indexes = self.integer_columns
         if self.alphas is None:
             alphas_list = np.ones(len(feature_indexes))
+        elif type(self.alphas) == float:
+            alphas_list = np.array([self.alphas] * len(feature_indexes))
         else:
             alphas_list = self.alphas
         self.dict_logit_with_batch = dict()
@@ -187,13 +189,13 @@ class ConQur(sklearn.base.TransformerMixin):
                                                                               n_jobs=self.n_jobs,
                                                                               l1_ratio=self.l1_ratio
                                                                               )
-                self.dict_logit_with_batch[feature] = (logistic_regression.fit(X_batch_and_covariates_no_ref_batch,
+                self.dict_logit_with_batch[feature] = (logistic_regression.fit(X_batch_and_covariates,
                                                                                y_for_logit), 'model')
             y_nonzero = y_initial[y_initial != 0]
             y_nonzero_shifted = y_nonzero
-            if feature in jittering_columns_indexes:
+            if feature in integer_columns_indexes:
                 y_nonzero_shifted = y_nonzero + np.random.uniform(0, 1, len(y_nonzero))
-            X_and_y = np.hstack((X_batch_and_covariates_no_ref_batch, y_initial.reshape(len(y_initial), 1)))
+            X_and_y = np.hstack((X_batch_and_covariates, y_initial.reshape(len(y_initial), 1)))
             X_and_y_nonzero = X_and_y[X_and_y[:, len(X_and_y[0]) - 1] != 0]
             X_batch_and_covariates_nonzero = X_and_y_nonzero[:, :-1]
             self.dict_quantile_with_batch[feature] = []
@@ -223,72 +225,45 @@ class ConQur(sklearn.base.TransformerMixin):
 
         """
         Xt = X.copy()
+        X_reference = X.copy()
+        for i in self.batch_columns:
+            X_reference[:, i] = self.reference_values[i]
         batch_and_covariates_indexes = np.hstack((self.batch_columns, self.covariates_columns))
-        batch_columns_no_ref_batch = list(set(self.batch_columns) - set(np.array([self.reference_batch])))
-        batch_columns_no_ref_batch = np.array(batch_columns_no_ref_batch)
-        batch_and_covariates_no_ref_batch_indexes = np.hstack((batch_columns_no_ref_batch, self.covariates_columns))
-        X_batch_and_covariates_no_ref_batch = X[:, batch_and_covariates_no_ref_batch_indexes]
+        X_batch_and_covariates = X[:, batch_and_covariates_indexes]
+        X_reference = X_reference[:, batch_and_covariates_indexes]
         columns_indexes_set = set(np.arange(0, len(X[0])))
         batch_and_covariates_indexes_set = set(batch_and_covariates_indexes)
         feature_indexes = list(columns_indexes_set - batch_and_covariates_indexes_set)
         feature_indexes = np.array(feature_indexes)
-        if self.jittering_columns is None:
-            jittering_columns_indexes = feature_indexes
+        feature_indexes.sort()
+        if self.integer_columns is None:
+            integer_columns_indexes = feature_indexes
         else:
-            jittering_columns_indexes = self.jittering_columns
-        if self.alphas is None:
-            alphas_list = np.ones(len(feature_indexes))
-        else:
-            alphas_list = self.alphas
+            integer_columns_indexes = self.integer_columns
         for feature in feature_indexes:
             y_initial = X[:, feature]
             if self.dict_logit_with_batch[feature][1] == 'all_positive':
-                y_zero_predicted = np.zeros(len(X_batch_and_covariates_no_ref_batch[0]))
-                y_zero_predicted_nobatch = np.zeros(len(X_batch_and_covariates_no_ref_batch[0]))
+                y_zero_predicted = np.zeros(len(X_batch_and_covariates))
+                y_zero_predicted_nobatch = np.zeros(len(X_batch_and_covariates))
             elif self.dict_logit_with_batch[feature][1] == 'all_equal_to_zero':
                 Xt[:, feature] = 0
                 continue
             else:
-                Y_predicted = self.dict_logit_with_batch[feature][0].predict_proba(X_batch_and_covariates_no_ref_batch)
+                Y_predicted = self.dict_logit_with_batch[feature][0].predict_proba(X_batch_and_covariates)
                 y_zero_predicted = Y_predicted[:, 0]
-                logit_model_nobatch = sklearn.linear_model.LogisticRegression(self.penalty,
-                                                                              dual=self.dual,
-                                                                              tol=self.tol,
-                                                                              C=self.C,
-                                                                              fit_intercept=self.fit_intercept_logit,
-                                                                              intercept_scaling=self.intercept_scaling,
-                                                                              class_weight=self.class_weight,
-                                                                              random_state=self.random_state,
-                                                                              solver=self.solver_logit,
-                                                                              max_iter=self.max_iter,
-                                                                              multi_class=self.multi_class,
-                                                                              verbose=self.verbose,
-                                                                              warm_start=self.warm_start,
-                                                                              n_jobs=self.n_jobs,
-                                                                              l1_ratio=self.l1_ratio
-                                                                              )
-                logit_model_nobatch.coef_ = self.dict_logit_with_batch[feature][0].coef_.copy()
-                logit_model_nobatch.coef_[0, self.batch_columns] = 0
-                Y_predicted_nobatch = logit_model_nobatch.predict_proba(X_batch_and_covariates_no_ref_batch)
+                Y_predicted_nobatch = self.dict_logit_with_batch[feature][0].predict_proba(X_reference)
                 y_zero_predicted_nobatch = Y_predicted_nobatch[:, 0]
             predictions = dict()
             predictions_nobatch = dict()
             counter_quantile = 0
             for quantile in self.quantiles:
                 predictions[quantile] = self.dict_quantile_with_batch[feature][counter_quantile].predict(
-                    X_batch_and_covariates_no_ref_batch)
-                if feature in jittering_columns_indexes:
+                    X_batch_and_covariates)
+                if feature in integer_columns_indexes:
                     predictions[quantile] = np.floor(predictions[quantile])
-                quantile_model_nobatch = sklearn.linear_model.QuantileRegressor(quantile=quantile,
-                                                                                alpha=alphas_list[feature],
-                                                                                fit_intercept=self.fit_intercept_quantile,
-                                                                                solver=self.solver_quantile,
-                                                                                solver_options=self.solver_options
-                                                                                )
-                quantile_model_nobatch.coef_ = self.dict_quantile_with_batch[feature][counter_quantile].coef_.copy()
-                quantile_model_nobatch.coef_[self.batch_columns] = 0
-                predictions_nobatch[quantile] = quantile_model_nobatch.predict(X_batch_and_covariates_no_ref_batch)
-                if feature in jittering_columns_indexes:
+                predictions_nobatch[quantile] = self.dict_quantile_with_batch[feature][counter_quantile].predict(
+                    X_reference)
+                if feature in integer_columns_indexes:
                     predictions_nobatch[quantile] = np.floor(predictions_nobatch[quantile])
                 counter_quantile += 1
             for sample in range(len(y_initial)):
