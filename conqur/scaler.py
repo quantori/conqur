@@ -63,7 +63,7 @@ class ConQur(sklearn.base.TransformerMixin):
 
     quantiles : A sequence of quantile levels, determing the “precision” of estimating conditional quantile functions;
     the default value is equal to None, but the code will be executed on the list
-    np.linspace(0.05, 1, 19, endpoint=False).
+    np.linspace(0.05, 1, 199, endpoint=False).
 
     interplt_delta : A float constant in (0, 0.5), determing the size of the interpolation window
     for using the data-driven linear interpolation between zero and non-zero quantiles to stabilize border estimates.
@@ -95,7 +95,7 @@ class ConQur(sklearn.base.TransformerMixin):
                  l1_ratio=None,
                  alphas=None,
                  fit_intercept_quantile=True,
-                 solver_quantile='interior-point',
+                 solver_quantile='highs-ds',
                  solver_options=None,
                  quantiles=None,
                  interplt_delta=None
@@ -124,7 +124,7 @@ class ConQur(sklearn.base.TransformerMixin):
         self.solver_quantile = solver_quantile
         self.solver_options = solver_options
         if quantiles is None:
-            self.quantiles = np.linspace(0.05, 1, 3, endpoint=False)
+            self.quantiles = np.linspace(0.05, 1, 199, endpoint=False)
         else:
             self.quantiles = quantiles
         self.interplt_delta = interplt_delta
@@ -266,26 +266,64 @@ class ConQur(sklearn.base.TransformerMixin):
                 if feature in integer_columns_indexes:
                     predictions_nobatch[quantile] = np.floor(predictions_nobatch[quantile])
                 counter_quantile += 1
-            for sample in range(len(y_initial)):
-                predictions_correct = dict()
-                predictions_correct_nobatch = dict()
-                quantile_correct_list = []
-                quantile_correct_nobatch_list = []
-                for quantile in self.quantiles:
-                    quantile_correct = 1 - (1 - quantile) * (1 - y_zero_predicted[sample])
-                    quantile_correct_list.append(quantile_correct)
-                    predictions_correct[quantile_correct] = predictions[quantile][sample]
-                    quantile_correct_nobatch = 1 - (1 - quantile) * (1 - y_zero_predicted_nobatch[sample])
-                    quantile_correct_nobatch_list.append(quantile_correct_nobatch)
-                    predictions_correct_nobatch[quantile_correct_nobatch] = predictions_nobatch[quantile][sample]
+            number_of_samples = len(y_initial)
+            for sample in range(number_of_samples):
+                zero_path, transition_path, positive_path = [], [], []
+                zero_path_nobatch, transition_path_nobatch, positive_path_nobatch = [], [], []
+                if not (self.interplt_delta is None):
+                    zero_path = self.quantiles[self.quantiles < y_zero_predicted[sample]]
+                    zero_path_nobatch = self.quantiles[self.quantiles < y_zero_predicted_nobatch[sample]]
+                    transition_path = (self.quantiles[y_zero_predicted[sample] <= self.quantiles <= y_zero_predicted[sample] + number_of_samples ** (-self.interplt_delta)] - y_zero_predicted[sample]) * (number_of_samples ** (self.interplt_delta))
+                    transition_path_nobatch = (self.quantiles[y_zero_predicted_nobatch[sample] <= self.quantiles <= y_zero_predicted_nobatch[sample] + number_of_samples ** (-self.interplt_delta)] - y_zero_predicted_nobatch[sample]) * (number_of_samples ** (self.interplt_delta))
+                    positive_path = (self.quantiles[self.quantiles > y_zero_predicted[sample] + number_of_samples ** (-self.interplt_delta)] - y_zero_predicted[sample]) / (1 - y_zero_predicted[sample])
+                    positive_path_nobatch = (self.quantiles[self.quantiles > y_zero_predicted_nobatch[sample] + number_of_samples ** (-self.interplt_delta)] - y_zero_predicted_nobatch[sample]) / (1 - y_zero_predicted_nobatch[sample])
+                    taus_nonzero = np.hstack((np.array([number_of_samples / (-self.interplt_delta)]), positive_path))
+                    taus_nonzero_nobatch = np.hstack((np.array([number_of_samples / (-self.interplt_delta)]), positive_path_nobatch))
+                else:
+                    zero_path = self.quantiles[self.quantiles <= y_zero_predicted[sample]]
+                    zero_path_nobatch = self.quantiles[self.quantiles <= y_zero_predicted_nobatch[sample]]
+                    taus_nonzero = (self.quantiles[self.quantiles > y_zero_predicted[sample]] - y_zero_predicted[sample]) / (1 - y_zero_predicted[sample])
+                    taus_nonzero_nobatch = (self.quantiles[self.quantiles > y_zero_predicted_nobatch[sample]] - y_zero_predicted_nobatch[sample]) / (1 - y_zero_predicted_nobatch[sample])
+                if len(taus_nonzero) > 0 and taus_nonzero[0] < 1:
+                    location = []
+                    for tau in taus_nonzero:
+                        loc = self.quantiles[abs(self.quantiles - tau) == min(abs(self.quantiles - tau))]
+                        location.append(loc[0])
+                    fit = [predictions[i][sample] for i in location]
+                    if not (self.interplt_delta is None):
+                        predictions_initial_quantiles_correct = [0 for i in zero_path] + list(fit[0] * transition_path) + fit[1:]
+                    else:
+                        predictions_initial_quantiles_correct = [0 for i in zero_path] + fit
+                else:
+                    predictions_initial_quantiles_correct = [0 for i in self.quantiles]
+                if len(taus_nonzero_nobatch) > 0 and taus_nonzero_nobatch[0] < 1:
+                    location = []
+                    for tau in taus_nonzero_nobatch:
+                        loc = self.quantiles[abs(self.quantiles - tau) == min(abs(self.quantiles - tau))]
+                        location.append(loc[0])
+                    fit = [predictions_nobatch[i][sample] for i in location]
+                    if not (self.interplt_delta is None):
+                        predictions_initial_quantiles_correct_nobatch = [0 for i in zero_path_nobatch] + list(fit[0] * transition_path_nobatch) + fit[1:]
+                    else:
+                        predictions_initial_quantiles_correct_nobatch = [0 for i in zero_path_nobatch] + fit
+                else:
+                    predictions_initial_quantiles_correct_nobatch = [0 for i in self.quantiles]
                 y_initial_sample = y_initial[sample]
-                y_initial_sample_quantile = y_zero_predicted[sample]
-                for quantile in quantile_correct_list:
-                    if predictions_correct[quantile] <= y_initial_sample:
-                        y_initial_sample_quantile = quantile
                 y_nobatch = 0
-                for quantile in quantile_correct_nobatch_list:
-                    if quantile <= y_initial_sample_quantile:
-                        y_nobatch = predictions_correct_nobatch[quantile]
+                quantile_for_y_nobatch = []
+                for i in range(len(predictions_initial_quantiles_correct)):
+                    if y_initial_sample == predictions_initial_quantiles_correct[i]:
+                        quantile_for_y_nobatch.append(i)
+                if len(quantile_for_y_nobatch) != 0:
+                    for index in quantile_for_y_nobatch:
+                        y_nobatch += predictions_initial_quantiles_correct_nobatch[index]
+                    if feature in integer_columns_indexes:
+                        y_nobatch = round(y_nobatch / len(quantile_for_y_nobatch), 0)
+                    else:
+                        y_nobatch = y_nobatch / len(quantile_for_y_nobatch)
+                else:
+                    for i in range(len(predictions_initial_quantiles_correct)):
+                        if predictions_initial_quantiles_correct[i] < y_initial_sample:
+                            y_nobatch = predictions_initial_quantiles_correct_nobatch[i]
                 Xt[sample, feature] = y_nobatch
         return Xt
