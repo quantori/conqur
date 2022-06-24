@@ -11,7 +11,7 @@ from conqur import scaler
 
 def r_initial_matrix():
     with open(
-        "initial_matrix_for_test.txt"
+        "resources/initial_matrix_for_test.txt"
     ) as file:
         X_batchid = np.array(pd.read_csv(file, sep=" "))
         X_with_batch_columns = np.zeros((273, 107))
@@ -31,14 +31,14 @@ def r_initial_matrix():
 
 def r_corrected_matrix_1():
     with open(
-        "matrix_corrected_for_test_1.txt"
+        "resources/matrix_corrected_for_test_1.txt"
     ) as file:
         return np.array(pd.read_csv(file, sep=" "))
 
 
 def r_corrected_matrix_2():
     with open(
-        "matrix_corrected_for_test_2.txt"
+        "resources/matrix_corrected_for_test_2.txt"
     ) as file:
         return np.array(pd.read_csv(file, sep=" "))
 
