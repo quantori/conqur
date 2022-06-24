@@ -36,11 +36,6 @@ setup(
         "Programming Language :: Python :: 3.8",
     ],
     description="Batch effects removal for microbiome data via conditional quantile regression",
-    entry_points={
-        "console_scripts": [
-            "conqur=conqur.cli:main",
-        ],
-    },
     install_requires=requirements,
     extras_require=extras,
     license="MIT license",
