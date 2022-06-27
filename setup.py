@@ -16,7 +16,7 @@ requirements = [
 
 extras = {
     "test": [
-        "pandas>=1.3.0",
+        "pandas>=1.3.0"
     ]
 }
 
@@ -33,7 +33,7 @@ setup(
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.8"
     ],
     description="Batch effects removal for microbiome data via conditional quantile regression",
     install_requires=requirements,
@@ -46,5 +46,5 @@ setup(
     packages=find_packages(include=["conqur", "conqur.*"]),
     url="https://github.com/Karkarmath/conqur",
     version="0.1.0",
-    zip_safe=False,
+    zip_safe=False
 )
