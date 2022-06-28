@@ -30,3 +30,8 @@ jobs:
       - name: Run unit tests
         run: |
           python -m unittest discover tests/
+
+      - name: Create documentation
+        run: |
+          pip install sphinx-autobuild
+          sphinx-autobuild docs docs/_build/html
