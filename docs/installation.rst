@@ -32,13 +32,13 @@ You can either clone the public repository:
 
 .. code-block:: console
 
-    $ git clone git://github.com/Karkarmath/conqur
+    $ git clone git://github.com/quantori/conqur
 
 Or download the `tarball`_:
 
 .. code-block:: console
 
-    $ curl -OJL https://github.com/Karkarmath/conqur/tarball/master
+    $ curl -OJL https://github.com/quantori/conqur/tarball/main
 
 Once you have a copy of the source, you can install it with:
 

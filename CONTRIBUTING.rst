@@ -15,7 +15,7 @@ Types of Contributions
 Report Bugs
 ~~~~~~~~~~~
 
-Report bugs at https://github.com/Karkarmath/conqur/issues.
+Report bugs at https://github.com/quantori/conqur/issues.
 
 If you are reporting a bug, please include:
 
@@ -45,7 +45,7 @@ articles, and such.
 Submit Feedback
 ~~~~~~~~~~~~~~~
 
-The best way to send feedback is to file an issue at https://github.com/Karkarmath/conqur/issues.
+The best way to send feedback is to file an issue at https://github.com/quantori/conqur/issues.
 
 If you are proposing a feature:
 
@@ -81,7 +81,6 @@ Ready to contribute? Here's how to set up `conqur` for local development.
 
     $ flake8 conqur tests
     $ python setup.py test or pytest
-    $ tox
 
    To get flake8 and tox, just pip install them into your virtualenv.
 
