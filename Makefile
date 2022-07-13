@@ -1,4 +1,4 @@
-.PHONY: clean clean-build clean-pyc clean-test coverage dist docs help install lint lint/flake8
+.PHONY: clean clean-build clean-pyc clean-test coverage dist docs help install lint lint/black
 .DEFAULT_GOAL := help
 
 define BROWSER_PYSCRIPT
@@ -46,10 +46,10 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr htmlcov/
 	rm -fr .pytest_cache
 
-lint/flake8: ## check style with flake8
-	flake8 conqur tests
+lint/black: ## check style with flake8
+	black conqur tests
 
-lint: lint/flake8 ## check style
+lint: lint/black ## check style
 
 test: ## run tests quickly with the default Python
 	python setup.py test

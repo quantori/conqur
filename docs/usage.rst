@@ -12,7 +12,7 @@ Or just::
 
 To create a model, use::
 
-    model = scaler.conqur(batch_columns, covariate_columns, reference_values, (some special arguments))
+    model = scaler.ConQur(batch_columns, covariate_columns, reference_values, (some special arguments))
 
 Then you should fit your model on the training data and transform the another matrix after fit::
 

@@ -10,4 +10,4 @@ Development Lead
 Contributors
 ------------
 
-* Aleksandr Grefenshtein <alexander.grefenshtejn@quantori.com>
+* Aleksandr Grefenshtein <alexander.grefenshteyn@quantori.com>
