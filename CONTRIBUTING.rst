@@ -79,7 +79,7 @@ Ready to contribute? Here's how to set up `conqur` for local development.
 5. When you're done making changes, check that your changes pass black and the
    tests, including testing other Python versions with tox::
 
-    $ black conqur tests
+    $ black --check conqur
     $ python -m unittest discover tests/
     $ tox
 

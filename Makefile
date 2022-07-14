@@ -1,5 +1,5 @@
-.PHONY: clean clean-build clean-pyc clean-test coverage dist help install lint lint/black docs cac
-.DEFAULT_GOAL := go
+.PHONY: clean clean-build clean-pyc clean-test coverage dist help install lint lint/black docs
+.DEFAULT_GOAL := help
 
 define BROWSER_PYSCRIPT
 import os, webbrowser, sys
@@ -23,7 +23,7 @@ export PRINT_HELP_PYSCRIPT
 
 BROWSER := python -c "$$BROWSER_PYSCRIPT"
 
-go: lint test test-all coverage docs
+all-tests-and-docs: lint test test-all coverage docs ## run tests and generate Sphinx HTML documentation
 
 help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
@@ -31,9 +31,9 @@ help:
 clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
 
 clean-build: ## remove build artifacts
-	Remove-item build -recurse
-	Remove-item dist -recurse
-	Remove-item .eggs -recurse
+	rm -fr build/
+	rm -fr dist/
+	rm -fr .eggs/
 	find . -name '*.egg-info' -exec rm -fr {} +
 	find . -name '*.egg' -exec rm -f {} +
 
@@ -44,13 +44,13 @@ clean-pyc: ## remove Python file artifacts
 	find . -name '__pycache__' -exec rm -fr {} +
 
 clean-test: ## remove test and coverage artifacts
-	Remove-item .tox -recurse
-	del /f .coverage
-	Remove-item htmlcov -recurse
-	del /f .pytest_cache
+	rm -fr .tox/
+	rm -f .coverage
+	rm -fr htmlcov/
+	rm -fr .pytest_cache
 
 lint/black: ## check style with black
-	black conqur tests
+	black --check conqur
 
 lint: lint/black ## check style
 
@@ -64,13 +64,18 @@ coverage: ## check code coverage quickly with the default Python
 	coverage run --source conqur setup.py test
 	coverage report -m
 	coverage html
+	$(BROWSER) htmlcov/index.html
 
 docs: ## generate Sphinx HTML documentation
-	del /f docs\conqur.rst
-	del /f docs\conqur.rst
+	rm -f docs/conqur.rst
+	rm -f docs/modules.rst
 	sphinx-apidoc -o docs/ conqur
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
+	$(BROWSER) docs/_build/html/index.html
+
+servedocs: docs ## compile the docs watching for changes
+	watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
 
 release: dist ## package and upload a release
 	twine upload dist/*

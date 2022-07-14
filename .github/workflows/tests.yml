@@ -29,8 +29,8 @@ jobs:
 
       - name: Check the black code style
         run: |
-          black conqur tests
+          make lint
 
-      - name: Run unit tests
+      - name: Run tests
         run: |
-          python -m unittest discover tests/
+          make test
