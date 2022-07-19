@@ -23,10 +23,26 @@ Batch effects removal for microbiome data via conditional quantile regression on
 * Documentation: https://conqur.readthedocs.io.
 
 
+Description
+--------
+
+We implement in Python the batch effect removal algorithm described in
+
+[Ling et al.](https://www.biorxiv.org/content/10.1101/2021.09.23.461592v1)
+
+[Implementation](https://github.com/wdl2459/ConQuR) used in the paper is written in R. This implementation attempts to
+be as close as possible, but has some new features (see Features for details).
+
 Features
 --------
 
-* TODO
+This implementation supports
+
+* using non-negative float features, batch and covariate variables;
+
+* using logistic regression with an L2 penalty;
+
+* using arbitrary quantiles in quantile regression.
 
 Credits
 -------

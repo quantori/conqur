@@ -15,7 +15,7 @@ Types of Contributions
 Report Bugs
 ~~~~~~~~~~~
 
-Report bugs at https://github.com/Karkarmath/conqur/issues.
+Report bugs at https://github.com/quantori/conqur/issues.
 
 If you are reporting a bug, please include:
 
@@ -45,7 +45,7 @@ articles, and such.
 Submit Feedback
 ~~~~~~~~~~~~~~~
 
-The best way to send feedback is to file an issue at https://github.com/Karkarmath/conqur/issues.
+The best way to send feedback is to file an issue at https://github.com/quantori/conqur/issues.
 
 If you are proposing a feature:
 
@@ -76,14 +76,24 @@ Ready to contribute? Here's how to set up `conqur` for local development.
 
    Now you can make your changes locally.
 
-5. When you're done making changes, check that your changes pass flake8 and the
+5. When you're done making changes, check that your changes pass black and the
    tests, including testing other Python versions with tox::
 
-    $ flake8 conqur tests
-    $ python setup.py test or pytest
+    $ black --check conqur
+    $ python -m unittest discover tests/
     $ tox
 
-   To get flake8 and tox, just pip install them into your virtualenv.
+   To get black and tox, just pip install them into your virtualenv.
+
+   You can also use the following commands from the Makefile::
+
+    $ make lint
+    $ make test
+    $ make test-all
+
+   To get other available commands from the Makefile just run::
+
+    $ make
 
 6. Commit your changes and push your branch to GitHub::
 
@@ -102,9 +112,7 @@ Before you submit a pull request, check that it meets these guidelines:
 2. If the pull request adds functionality, the docs should be updated. Put
    your new functionality into a function with a docstring, and add the
    feature to the list in README.rst.
-3. The pull request should work for Python 3.5, 3.6, 3.7 and 3.8, and for PyPy. Check
-   https://travis-ci.com/Karkarmath/conqur/pull_requests
-   and make sure that the tests pass for all supported Python versions.
+3. The pull request should work for Python  3.7, 3.8 and 3.9 and for PyPy.
 
 Tips
 ----
@@ -124,5 +132,3 @@ Then run::
 $ bump2version patch # possible: major / minor / patch
 $ git push
 $ git push --tags
-
-Travis will then deploy to PyPI if tests pass.

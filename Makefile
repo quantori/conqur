@@ -1,4 +1,4 @@
-.PHONY: clean clean-build clean-pyc clean-test coverage dist docs help install lint lint/flake8
+.PHONY: clean clean-build clean-pyc clean-test coverage dist help install lint lint/black format docs
 .DEFAULT_GOAL := help
 
 define BROWSER_PYSCRIPT
@@ -22,6 +22,8 @@ endef
 export PRINT_HELP_PYSCRIPT
 
 BROWSER := python -c "$$BROWSER_PYSCRIPT"
+
+all-tests-and-docs: lint test test-all coverage docs ## run tests and generate Sphinx HTML documentation
 
 help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
@@ -47,10 +49,13 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr htmlcov/
 	rm -fr .pytest_cache
 
-lint/flake8: ## check style with flake8
-	flake8 conqur tests
+lint/black: ## check style with black
+	black --check conqur
 
-lint: lint/flake8 ## check style
+lint: lint/black ## check style
+
+format: ## formatting the code with black
+	black conqur tests
 
 test: ## run tests quickly with the default Python
 	python setup.py test
@@ -64,7 +69,7 @@ coverage: ## check code coverage quickly with the default Python
 	coverage html
 	$(BROWSER) htmlcov/index.html
 
-docs: ## generate Sphinx HTML documentation, including API docs
+docs: ## generate Sphinx HTML documentation
 	rm -f docs/conqur.rst
 	rm -f docs/modules.rst
 	sphinx-apidoc -o docs/ conqur

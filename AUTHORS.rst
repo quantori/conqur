@@ -5,9 +5,9 @@ Credits
 Development Lead
 ----------------
 
-* Aleksandr Grefenstein <alexander.grefenshtejn@quantori.com>
+* Alexander Knop <alexander.knop@quantori.com>
 
 Contributors
 ------------
 
-None yet. Why not be the first?
+* Aleksandr Grefenshtein <alexander.grefenshteyn@quantori.com>

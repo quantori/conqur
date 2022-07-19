@@ -27,6 +27,10 @@ jobs:
           if [ -f requirements_dev.txt ]; then pip install -r requirements_dev.txt; fi
           pip install .[test]
 
-      - name: Run unit tests
+      - name: Check the black code style
         run: |
-          python -m unittest discover tests/
+          make lint
+
+      - name: Run tests
+        run: |
+          make test

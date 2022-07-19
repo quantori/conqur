@@ -216,9 +216,13 @@ class ConQur(sklearn.base.TransformerMixin):
             if feature in integer_columns_indexes:
                 if not (self.random_state_distribution is None):
                     np.random.seed(self.random_state_distribution)
-                    y_nonzero_shifted = y_nonzero + np.random.uniform(0, 1, len(y_nonzero))
+                    y_nonzero_shifted = y_nonzero + np.random.uniform(
+                        0, 1, len(y_nonzero)
+                    )
                 else:
-                    y_nonzero_shifted = y_nonzero + np.random.uniform(0, 1, len(y_nonzero))
+                    y_nonzero_shifted = y_nonzero + np.random.uniform(
+                        0, 1, len(y_nonzero)
+                    )
             X_and_y = np.hstack(
                 (X_batch_and_covariates, y_initial.reshape(len(y_initial), 1))
             )
@@ -317,48 +321,48 @@ class ConQur(sklearn.base.TransformerMixin):
                 if not (self.interplt_delta is None):
                     zero_path = self.quantiles[
                         self.quantiles < y_zero_predicted[sample]
-                        ]
+                    ]
                     zero_path_nobatch = self.quantiles[
                         self.quantiles < y_zero_predicted_nobatch[sample]
-                        ]
+                    ]
                     transition_path = (
-                                          self.quantiles[
-                                              (y_zero_predicted[sample] <= self.quantiles)
-                                              * (
-                                                  self.quantiles
-                                                  <= y_zero_predicted[sample]
-                                                  + number_of_samples ** (-self.interplt_delta)
-                                              )
-                                              ]
-                                          - y_zero_predicted[sample]
-                                      ) * (number_of_samples ** self.interplt_delta)
+                        self.quantiles[
+                            (y_zero_predicted[sample] <= self.quantiles)
+                            * (
+                                self.quantiles
+                                <= y_zero_predicted[sample]
+                                + number_of_samples ** (-self.interplt_delta)
+                            )
+                        ]
+                        - y_zero_predicted[sample]
+                    ) * (number_of_samples**self.interplt_delta)
                     transition_path_nobatch = (
-                                                  self.quantiles[
-                                                      (y_zero_predicted_nobatch[sample] <= self.quantiles)
-                                                      * (
-                                                          self.quantiles
-                                                          <= y_zero_predicted_nobatch[sample]
-                                                          + number_of_samples ** (-self.interplt_delta)
-                                                      )
-                                                      ]
-                                                  - y_zero_predicted_nobatch[sample]
-                                              ) * (number_of_samples ** self.interplt_delta)
+                        self.quantiles[
+                            (y_zero_predicted_nobatch[sample] <= self.quantiles)
+                            * (
+                                self.quantiles
+                                <= y_zero_predicted_nobatch[sample]
+                                + number_of_samples ** (-self.interplt_delta)
+                            )
+                        ]
+                        - y_zero_predicted_nobatch[sample]
+                    ) * (number_of_samples**self.interplt_delta)
                     positive_path = (
-                                        self.quantiles[
-                                            self.quantiles
-                                            > y_zero_predicted[sample]
-                                            + number_of_samples ** (-self.interplt_delta)
-                                            ]
-                                        - y_zero_predicted[sample]
-                                    ) / (1 - y_zero_predicted[sample])
+                        self.quantiles[
+                            self.quantiles
+                            > y_zero_predicted[sample]
+                            + number_of_samples ** (-self.interplt_delta)
+                        ]
+                        - y_zero_predicted[sample]
+                    ) / (1 - y_zero_predicted[sample])
                     positive_path_nobatch = (
-                                                self.quantiles[
-                                                    self.quantiles
-                                                    > y_zero_predicted_nobatch[sample]
-                                                    + number_of_samples ** (-self.interplt_delta)
-                                                    ]
-                                                - y_zero_predicted_nobatch[sample]
-                                            ) / (1 - y_zero_predicted_nobatch[sample])
+                        self.quantiles[
+                            self.quantiles
+                            > y_zero_predicted_nobatch[sample]
+                            + number_of_samples ** (-self.interplt_delta)
+                        ]
+                        - y_zero_predicted_nobatch[sample]
+                    ) / (1 - y_zero_predicted_nobatch[sample])
                     taus_nonzero = np.hstack(
                         (
                             np.array([number_of_samples / (-self.interplt_delta)]),
@@ -374,26 +378,26 @@ class ConQur(sklearn.base.TransformerMixin):
                 else:
                     zero_path = self.quantiles[
                         self.quantiles <= y_zero_predicted[sample]
-                        ]
+                    ]
                     zero_path_nobatch = self.quantiles[
                         self.quantiles <= y_zero_predicted_nobatch[sample]
-                        ]
+                    ]
                     taus_nonzero = (
-                                       self.quantiles[self.quantiles > y_zero_predicted[sample]]
-                                       - y_zero_predicted[sample]
-                                   ) / (1 - y_zero_predicted[sample])
+                        self.quantiles[self.quantiles > y_zero_predicted[sample]]
+                        - y_zero_predicted[sample]
+                    ) / (1 - y_zero_predicted[sample])
                     taus_nonzero_nobatch = (
-                                               self.quantiles[
-                                                   self.quantiles > y_zero_predicted_nobatch[sample]
-                                                   ]
-                                               - y_zero_predicted_nobatch[sample]
-                                           ) / (1 - y_zero_predicted_nobatch[sample])
+                        self.quantiles[
+                            self.quantiles > y_zero_predicted_nobatch[sample]
+                        ]
+                        - y_zero_predicted_nobatch[sample]
+                    ) / (1 - y_zero_predicted_nobatch[sample])
                 if len(taus_nonzero) > 0 and taus_nonzero[0] < 1:
                     location = []
                     for tau in taus_nonzero:
                         loc = self.quantiles[
                             abs(self.quantiles - tau) == min(abs(self.quantiles - tau))
-                            ]
+                        ]
                         location.append(loc[0])
                     fit = [predictions[i][sample] for i in location]
                     if not (self.interplt_delta is None):
@@ -404,8 +408,8 @@ class ConQur(sklearn.base.TransformerMixin):
                         )
                     else:
                         predictions_initial_quantiles_correct = [
-                                                                    0 for i in zero_path
-                                                                ] + fit
+                            0 for i in zero_path
+                        ] + fit
                 else:
                     predictions_initial_quantiles_correct = [0 for i in self.quantiles]
                 if len(taus_nonzero_nobatch) > 0 and taus_nonzero_nobatch[0] < 1:
@@ -413,7 +417,7 @@ class ConQur(sklearn.base.TransformerMixin):
                     for tau in taus_nonzero_nobatch:
                         loc = self.quantiles[
                             abs(self.quantiles - tau) == min(abs(self.quantiles - tau))
-                            ]
+                        ]
                         location.append(loc[0])
                     fit = [predictions_nobatch[i][sample] for i in location]
                     if not (self.interplt_delta is None):
@@ -424,8 +428,8 @@ class ConQur(sklearn.base.TransformerMixin):
                         )
                     else:
                         predictions_initial_quantiles_correct_nobatch = [
-                                                                            0 for i in zero_path_nobatch
-                                                                        ] + fit
+                            0 for i in zero_path_nobatch
+                        ] + fit
                 else:
                     predictions_initial_quantiles_correct_nobatch = [
                         0 for i in self.quantiles
