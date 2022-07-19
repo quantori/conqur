@@ -1,4 +1,4 @@
-.PHONY: clean clean-build clean-pyc clean-test coverage dist help install lint lint/black docs
+.PHONY: clean clean-build clean-pyc clean-test coverage dist help install lint lint/black format docs
 .DEFAULT_GOAL := help
 
 define BROWSER_PYSCRIPT
@@ -53,6 +53,9 @@ lint/black: ## check style with black
 	black --check conqur
 
 lint: lint/black ## check style
+
+format: ## formatting the code with black
+	black conqur tests
 
 test: ## run tests quickly with the default Python
 	python setup.py test

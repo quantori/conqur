@@ -11,7 +11,7 @@ with open("HISTORY.rst") as history_file:
 requirements = [
     "numpy>=1.21.6",
     "scikit-learn>=1.0.2",
-    "setuptools>=60.2.0"
+    "setuptools>=60.2.0",
 ]
 
 extras = {
@@ -19,7 +19,6 @@ extras = {
         "pandas>=1.3.0"
     ]
 }
-
 
 setup(
     author="Aleksandr Grefenstein",
@@ -31,9 +30,9 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8"
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9"
     ],
     description="Batch effects removal for microbiome data via conditional quantile regression on Python",
     install_requires=requirements,

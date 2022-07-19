@@ -85,6 +85,16 @@ Ready to contribute? Here's how to set up `conqur` for local development.
 
    To get black and tox, just pip install them into your virtualenv.
 
+   You can also use the following commands from the Makefile::
+
+    $ make lint
+    $ make test
+    $ make test-all
+
+   To get other available commands from the Makefile just run::
+
+    $ make
+
 6. Commit your changes and push your branch to GitHub::
 
     $ git add .
@@ -122,5 +132,3 @@ Then run::
 $ bump2version patch # possible: major / minor / patch
 $ git push
 $ git push --tags
-
-Travis will then deploy to PyPI if tests pass.
