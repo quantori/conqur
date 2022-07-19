@@ -13,11 +13,10 @@ requirements = [
     "scikit-learn>=1.0.2",
     "setuptools>=60.2.0",
 ]
+test_require = ["pandas>=1.3.0"]
 
 extras = {
-    "test": [
-        "pandas>=1.3.0"
-    ]
+    "test": test_require
 }
 
 setup(
@@ -37,6 +36,7 @@ setup(
     description="Batch effects removal for microbiome data via conditional quantile regression on Python",
     install_requires=requirements,
     extras_require=extras,
+    tests_require=test_require,
     license="MIT license",
     long_description=readme + "\n\n" + history,
     include_package_data=True,
