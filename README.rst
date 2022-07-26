@@ -3,11 +3,8 @@ ConQuR
 ======
 
 
-.. image:: https://img.shields.io/pypi/v/conqur.svg
-        :target: https://pypi.python.org/pypi/conqur
-
-.. image:: https://img.shields.io/travis/Karkarmath/conqur.svg
-        :target: https://travis-ci.com/Karkarmath/conqur
+.. image:: https://img.shields.io/pypi/v/conqur
+        :target: https://pypi.org/pypi/conqur
 
 .. image:: https://readthedocs.org/projects/conqur/badge/?version=latest
         :target: https://conqur.readthedocs.io/en/latest/?version=latest
