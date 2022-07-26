@@ -21,7 +21,7 @@ Batch effects removal for microbiome data via conditional quantile regression on
 
 
 Description
---------
+-----------
 
 We implement in Python the batch effect removal algorithm described in
 

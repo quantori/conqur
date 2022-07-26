@@ -24,7 +24,7 @@ setup(
     author_email="alexander.grefenshteyn@quantori.com",
     python_requires=">=3.7",
     classifiers=[
-        "Development Status :: 2 - Pre-Alpha",
+        "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
@@ -44,6 +44,6 @@ setup(
     name="conqur",
     packages=find_packages(include=["conqur", "conqur.*"]),
     url="https://github.com/quantori/conqur",
-    version="0.1.0",
+    version="1.0.0",
     zip_safe=False
 )
