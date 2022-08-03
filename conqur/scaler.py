@@ -16,7 +16,7 @@ class ConQur(sklearn.base.TransformerMixin):
 
     integer_columns : A list of columns whose elements are integers. Such columns are understood as a
     discrete distribution, and they need to be shifted by uniform distribution to make the
-    underlying distribution continous. Must not intersect with covariates_columns and batch_columns. [], if all features
+    underlying distribution continuous. Must not intersect with covariates_columns and batch_columns. [], if all features
     do not need to be shifted. If None, then all columns of features are shifted; default is None.
 
     penalty : See sklearn.linear_model.LogisticRegression; penalty parameter.
